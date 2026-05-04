@@ -1,0 +1,91 @@
+name: Sync Imóveis CEF
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # 06h Brasília (UTC-3) = 09h UTC
+  workflow_dispatch:       # permite rodar manualmente pelo GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+
+    steps:
+      - name: Baixar CSV da Caixa Econômica Federal
+        run: |
+          curl -L \
+            --retry 3 \
+            --retry-delay 10 \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+            -H "Accept-Language: pt-BR,pt;q=0.9" \
+            -H "Referer: https://venda-imoveis.caixa.gov.br/" \
+            -o imoveis-sp.csv \
+            "https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_SP.csv"
+
+          FIRST_LINE=$(head -1 imoveis-sp.csv)
+          if echo "$FIRST_LINE" | grep -qi "<html\|<!doctype\|captcha"; then
+            echo "AVISO: CEF retornou CAPTCHA — upload ignorado, usando latest do Storage"
+            echo "CSV_VALID=false" >> $GITHUB_ENV
+          else
+            echo "CSV válido — $(wc -l < imoveis-sp.csv) linhas"
+            echo "CSV_VALID=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload para Supabase Storage
+        if: env.CSV_VALID == 'true'
+        run: |
+          DATE=$(date +%Y-%m-%d)
+
+          curl -s -X POST \
+            "${SUPABASE_URL}/storage/v1/object/csvs/imoveis-${DATE}.csv" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: text/csv" \
+            -H "x-upsert: true" \
+            --data-binary @imoveis-sp.csv
+
+          curl -s -X POST \
+            "${SUPABASE_URL}/storage/v1/object/csvs/imoveis-latest.csv" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: text/csv" \
+            -H "x-upsert: true" \
+            --data-binary @imoveis-sp.csv
+
+          echo "CSV salvo no Storage: imoveis-latest.csv e imoveis-${DATE}.csv"
+
+      - name: Acionar sync no backend
+        continue-on-error: true
+        run: |
+          if [ -z "$BACKEND_URL" ]; then
+            echo "BACKEND_URL não configurado — pulando sync"
+            exit 0
+          fi
+
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            "${BACKEND_URL}/imoveis/sync" \
+            -H "x-sync-secret: ${SYNC_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 300)
+
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS:")
+
+          echo "Status: $HTTP_STATUS"
+          echo "Resposta: $BODY"
+
+          if [ "$HTTP_STATUS" != "200" ] && [ "$HTTP_STATUS" != "201" ]; then
+            echo "Erro no sync: status $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Resultado
+        if: always()
+        run: |
+          echo "Workflow concluído em $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "CSV válido baixado da CEF: $CSV_VALID"

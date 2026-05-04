@@ -1,65 +1,149 @@
-import Image from "next/image";
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import Header from '../components/layout/Header';
+import Sidebar from '../components/layout/Sidebar';
+import FilterBar from '../components/filters/FilterBar';
+import ImoveisGrid from '../components/imoveis/ImoveisGrid';
+import ImoveisTable from '../components/imoveis/ImoveisTable';
+import ViewToggle, { type ViewMode } from '../components/imoveis/ViewToggle';
+import AiModal from '../components/ia/AiModal';
+import { fetchImoveis, fetchCidades } from '../lib/api';
+import { enriquece } from '../lib/score';
+import { useFavorites } from '../lib/favorites';
+import type { FilterState, ImovelComScore } from '../lib/types';
+
+const DEFAULT_FILTERS: FilterState = {
+  cidade: '', tipo: '', modalidade: '', financiamento: '',
+  precoMin: '', precoMax: '', page: 1, limit: 15, orderBy: 'desconto_desc',
+};
 
 export default function Home() {
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [imoveis, setImoveis] = useState<ImovelComScore[]>([]);
+  const [cidades, setCidades] = useState<string[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [view, setView] = useState<ViewMode>('grid');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [selectedImovel, setSelectedImovel] = useState<ImovelComScore | null>(null);
+  const { isFav, toggle: toggleFav, count: favCount } = useFavorites();
+
+  const loadImoveis = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchImoveis(filters);
+      setImoveis(enriquece(res.data));
+      setTotal(res.total);
+      setTotalPages(res.totalPages);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => { loadImoveis(); }, [loadImoveis]);
+  useEffect(() => { fetchCidades().then(setCidades).catch(console.error); }, []);
+
+  function handleFilterChange(partial: Partial<FilterState>) {
+    setFilters(prev => ({ ...prev, ...partial }));
+  }
+
+  function handleClear() {
+    setFilters(DEFAULT_FILTERS);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      {/* Animação shimmer global */}
+      <style>{`
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      <Header total={total} onMenuClick={() => setSidebarOpen(true)} favCount={favCount} />
+
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        geminiKey={geminiKey}
+        onGeminiKeyChange={setGeminiKey}
+      />
+
+      <main style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
+        {/* Filtros */}
+        <FilterBar
+          filters={filters}
+          cidades={cidades}
+          onChange={handleFilterChange}
+          onClear={handleClear}
+          total={total}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+
+        {/* Cabeçalho da listagem */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <p style={{ fontWeight: 700, fontSize: 15 }}>Imóveis</p>
+            <select
+              value={filters.orderBy}
+              onChange={e => handleFilterChange({ orderBy: e.target.value as FilterState['orderBy'], page: 1 })}
+              style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--white)', cursor: 'pointer' }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <option value="desconto_desc">Maior desconto</option>
+              <option value="preco_asc">Menor preço</option>
+              <option value="preco_desc">Maior preço</option>
+              <option value="cidade_asc">Cidade A-Z</option>
+            </select>
+          </div>
+          <ViewToggle view={view} onChange={setView} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {/* Listagem */}
+        {view === 'grid' ? (
+          <ImoveisGrid imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel}
+            isFav={isFav} onToggleFav={toggleFav} />
+        ) : (
+          <ImoveisTable imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel} />
+        )}
+
+        {/* Paginação */}
+        {!loading && totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 28 }}>
+            <PageBtn disabled={filters.page <= 1} onClick={() => handleFilterChange({ page: filters.page - 1 })}>← Anterior</PageBtn>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              const p = filters.page <= 4 ? i + 1 : filters.page - 3 + i;
+              if (p < 1 || p > totalPages) return null;
+              return (
+                <PageBtn key={p} active={p === filters.page} onClick={() => handleFilterChange({ page: p })}>
+                  {p}
+                </PageBtn>
+              );
+            })}
+            <PageBtn disabled={filters.page >= totalPages} onClick={() => handleFilterChange({ page: filters.page + 1 })}>Próxima →</PageBtn>
+          </div>
+        )}
       </main>
-    </div>
+
+      <AiModal imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)} />
+    </>
+  );
+}
+
+function PageBtn({ children, onClick, disabled, active }: {
+  children: React.ReactNode; onClick?: () => void; disabled?: boolean; active?: boolean;
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+      border: '1px solid var(--border)', cursor: disabled ? 'default' : 'pointer',
+      background: active ? 'var(--brand)' : 'var(--white)',
+      color: active ? 'white' : disabled ? 'var(--text-muted)' : 'var(--text-primary)',
+      opacity: disabled ? 0.4 : 1,
+    }}>
+      {children}
+    </button>
   );
 }

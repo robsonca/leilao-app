@@ -9,12 +9,20 @@ datasource db {
 }
 
 model Imovel {
-  id         Int      @id @default(autoincrement())
-  titulo     String
-  cidade     String
-  preco      Float
-  desconto   Float?
-  tipo       String
-  modalidade String
-  criadoEm  DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  numero        String   @unique
+  cidade        String
+  bairro        String
+  endereco      String
+  tipo          String
+  descricao     String?
+  preco         Float
+  desconto      Float?
+  financiamento Boolean  @default(false)
+  modalidade    String
+  link          String?
+  areaTotal     Float?
+  quartos       Int?
+  vagas         Int?
+  criadoEm      DateTime @default(now())
 }
