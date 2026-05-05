@@ -6,7 +6,7 @@ interface Props {
   loading?: boolean;
   onAnalise: (imovel: ImovelComScore) => void;
   isFav?: (id: number) => boolean;
-  onToggleFav?: (id: number) => void;
+  onToggleFav?: (imovel: ImovelComScore) => void;
 }
 
 export default function ImoveisGrid({ imoveis, loading, onAnalise, isFav, onToggleFav }: Props) {

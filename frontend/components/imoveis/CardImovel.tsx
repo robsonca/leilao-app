@@ -9,7 +9,7 @@ interface Props {
   imovel: ImovelComScore;
   onAnalise: (imovel: ImovelComScore) => void;
   isFav?: boolean;
-  onToggleFav?: (id: number) => void;
+  onToggleFav?: (imovel: ImovelComScore) => void;
 }
 
 const SCORE_STYLE = {
@@ -26,7 +26,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
 
   function handleFav(e: React.MouseEvent) {
     e.stopPropagation();
-    onToggleFav?.(imovel.id);
+    onToggleFav?.(imovel);
     setHeartPop(true);
     setTimeout(() => setHeartPop(false), 300);
   }

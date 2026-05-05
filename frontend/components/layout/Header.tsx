@@ -5,9 +5,10 @@ interface HeaderProps {
   onMenuClick: () => void;
   favCount?: number;
   onFavClick?: () => void;
+  showingFavs?: boolean;
 }
 
-export default function Header({ total, onMenuClick, favCount = 0, onFavClick }: HeaderProps) {
+export default function Header({ total, onMenuClick, favCount = 0, onFavClick, showingFavs = false }: HeaderProps) {
   return (
     <header style={{
       background: 'var(--white)',
@@ -55,9 +56,10 @@ export default function Header({ total, onMenuClick, favCount = 0, onFavClick }:
 
         {/* Botão favoritos */}
         <button onClick={onFavClick} style={{
-          position: 'relative', background: 'none',
-          border: '1px solid var(--border)', borderRadius: 8,
-          padding: '6px 10px', cursor: 'pointer',
+          position: 'relative',
+          background: showingFavs ? 'var(--brand-light)' : 'none',
+          border: `1px solid ${showingFavs ? 'var(--brand)' : 'var(--border)'}`,
+          borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 6,
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24"

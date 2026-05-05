@@ -1,37 +1,41 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { ImovelComScore } from './types';
 
 const KEY = 'leilao:favoritos';
 
-function readStorage(): Set<number> {
-  if (typeof window === 'undefined') return new Set();
+type FavMap = Record<number, ImovelComScore>;
+
+function readStorage(): FavMap {
+  if (typeof window === 'undefined') return {};
   try {
     const raw = localStorage.getItem(KEY);
-    return new Set(raw ? (JSON.parse(raw) as number[]) : []);
+    return raw ? (JSON.parse(raw) as FavMap) : {};
   } catch {
-    return new Set();
+    return {};
   }
 }
 
 export function useFavorites() {
-  const [favs, setFavs] = useState<Set<number>>(new Set());
+  const [favMap, setFavMap] = useState<FavMap>({});
 
   useEffect(() => {
-    setFavs(readStorage());
+    setFavMap(readStorage());
   }, []);
 
-  const toggle = useCallback((id: number) => {
-    setFavs(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      localStorage.setItem(KEY, JSON.stringify([...next]));
+  const toggle = useCallback((imovel: ImovelComScore) => {
+    setFavMap(prev => {
+      const next = { ...prev };
+      if (next[imovel.id]) delete next[imovel.id];
+      else next[imovel.id] = imovel;
+      localStorage.setItem(KEY, JSON.stringify(next));
       return next;
     });
   }, []);
 
-  const isFav = useCallback((id: number) => favs.has(id), [favs]);
+  const isFav = useCallback((id: number) => !!favMap[id], [favMap]);
+  const favList = Object.values(favMap);
 
-  return { favs, isFav, toggle, count: favs.size };
+  return { isFav, toggle, count: favList.length, favList };
 }
