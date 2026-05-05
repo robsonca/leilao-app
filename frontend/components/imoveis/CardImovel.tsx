@@ -127,16 +127,41 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           </div>
         )}
 
-        {/* Preço + Score */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div>
-            <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2 }}>
-              Valor
-            </p>
-            <p style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>
-              {formatBRL(imovel.preco)}
-            </p>
-          </div>
+        {/* Preço */}
+        <div style={{ marginBottom: 12 }}>
+          {imovel.desconto && imovel.desconto > 0 ? (
+            <>
+              {/* Valor original cortado */}
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: 1 }}>
+                De {formatBRL(imovel.preco / (1 - imovel.desconto / 100))}
+              </p>
+              {/* Preço com desconto */}
+              <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--brand)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+                {formatBRL(imovel.preco)}
+              </p>
+              {/* Economia */}
+              <p style={{
+                fontSize: 12, fontWeight: 700, color: 'var(--green)',
+                background: 'var(--green-bg)', display: 'inline-block',
+                padding: '2px 8px', borderRadius: 6, marginTop: 4,
+              }}>
+                Economia de {formatBRL(imovel.preco / (1 - imovel.desconto / 100) - imovel.preco)} ({formatPct(imovel.desconto)})
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 2 }}>
+                Valor
+              </p>
+              <p style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px' }}>
+                {formatBRL(imovel.preco)}
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Score */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <span style={{
             background: score.bg, color: score.color,
             fontSize: 11, fontWeight: 700,
