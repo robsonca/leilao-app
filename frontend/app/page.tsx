@@ -29,8 +29,7 @@ export default function Home() {
   const [view, setView] = useState<ViewMode>('grid');
   const [geminiKey, setGeminiKey] = useState('');
   const [selectedImovel, setSelectedImovel] = useState<ImovelComScore | null>(null);
-  const [showFavs, setShowFavs] = useState(false);
-  const { isFav, toggle: toggleFav, count: favCount, favList } = useFavorites();
+  const { isFav, toggle: toggleFav, count: favCount } = useFavorites();
 
   const loadImoveis = useCallback(async () => {
     setLoading(true);
@@ -57,8 +56,6 @@ export default function Home() {
     setFilters(DEFAULT_FILTERS);
   }
 
-  const listaAtiva = showFavs ? favList : imoveis;
-
   return (
     <>
       <style>{`
@@ -70,8 +67,6 @@ export default function Home() {
         total={total}
         onMenuClick={() => setSidebarOpen(true)}
         favCount={favCount}
-        onFavClick={() => setShowFavs(v => !v)}
-        showingFavs={showFavs}
       />
 
       <Sidebar
@@ -84,97 +79,57 @@ export default function Home() {
       <main className="main-container">
 
         {/* View favoritos */}
-        {showFavs ? (
-          <>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)',
-            }}>
-              <div>
-                <p style={{ fontWeight: 800, fontSize: 17 }}>❤️ Meus Favoritos</p>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
-                  {favCount} {favCount === 1 ? 'imóvel salvo' : 'imóveis salvos'}
-                </p>
-              </div>
-              <button onClick={() => setShowFavs(false)} style={{
-                padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                border: '1px solid var(--border)', background: 'var(--white)', cursor: 'pointer',
-              }}>
-                ← Voltar
-              </button>
+          {/* Filtros */}
+          <FilterBar
+            filters={filters}
+            cidades={cidades}
+            onChange={handleFilterChange}
+            onClear={handleClear}
+            total={total}
+          />
+
+          {/* Cabeçalho da listagem */}
+          <div className="listing-header">
+            <div className="listing-header-left">
+              <p style={{ fontWeight: 700, fontSize: 15 }}>Imóveis</p>
+              <select
+                value={filters.orderBy}
+                onChange={e => handleFilterChange({ orderBy: e.target.value as FilterState['orderBy'], page: 1 })}
+                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--white)', cursor: 'pointer' }}
+              >
+                <option value="desconto_desc">Maior desconto</option>
+                <option value="preco_asc">Menor preço</option>
+                <option value="preco_desc">Maior preço</option>
+                <option value="cidade_asc">Cidade A-Z</option>
+              </select>
             </div>
+            <ViewToggle view={view} onChange={setView} />
+          </div>
 
-            {favCount === 0 ? (
-              <div style={{ textAlign: 'center', padding: '64px 24px', color: 'var(--text-muted)' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🤍</div>
-                <p style={{ fontWeight: 600, marginBottom: 4 }}>Nenhum favorito ainda</p>
-                <p style={{ fontSize: 13 }}>Toque no coração dos imóveis para salvar</p>
-              </div>
-            ) : (
-              <ImoveisGrid
-                imoveis={listaAtiva}
-                loading={false}
-                onAnalise={setSelectedImovel}
-                isFav={isFav}
-                onToggleFav={toggleFav}
-              />
-            )}
-          </>
-        ) : (
-          <>
-            {/* Filtros */}
-            <FilterBar
-              filters={filters}
-              cidades={cidades}
-              onChange={handleFilterChange}
-              onClear={handleClear}
-              total={total}
-            />
+          {/* Listagem */}
+          {view === 'grid' ? (
+            <ImoveisGrid imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel}
+              isFav={isFav} onToggleFav={toggleFav} />
+          ) : (
+            <ImoveisTable imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel} />
+          )}
 
-            {/* Cabeçalho da listagem */}
-            <div className="listing-header">
-              <div className="listing-header-left">
-                <p style={{ fontWeight: 700, fontSize: 15 }}>Imóveis</p>
-                <select
-                  value={filters.orderBy}
-                  onChange={e => handleFilterChange({ orderBy: e.target.value as FilterState['orderBy'], page: 1 })}
-                  style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--white)', cursor: 'pointer' }}
-                >
-                  <option value="desconto_desc">Maior desconto</option>
-                  <option value="preco_asc">Menor preço</option>
-                  <option value="preco_desc">Maior preço</option>
-                  <option value="cidade_asc">Cidade A-Z</option>
-                </select>
-              </div>
-              <ViewToggle view={view} onChange={setView} />
+          {/* Paginação */}
+          {!loading && totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginTop: 28 }}>
+              <PageBtn disabled={filters.page <= 1} onClick={() => handleFilterChange({ page: filters.page - 1 })}>← Anterior</PageBtn>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                const p = filters.page <= 4 ? i + 1 : filters.page - 3 + i;
+                if (p < 1 || p > totalPages) return null;
+                return (
+                  <PageBtn key={p} active={p === filters.page} onClick={() => handleFilterChange({ page: p })}>
+                    {p}
+                  </PageBtn>
+                );
+              })}
+              <PageBtn disabled={filters.page >= totalPages} onClick={() => handleFilterChange({ page: filters.page + 1 })}>Próxima →</PageBtn>
             </div>
-
-            {/* Listagem */}
-            {view === 'grid' ? (
-              <ImoveisGrid imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel}
-                isFav={isFav} onToggleFav={toggleFav} />
-            ) : (
-              <ImoveisTable imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel} />
-            )}
-
-            {/* Paginação */}
-            {!loading && totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginTop: 28 }}>
-                <PageBtn disabled={filters.page <= 1} onClick={() => handleFilterChange({ page: filters.page - 1 })}>← Anterior</PageBtn>
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                  const p = filters.page <= 4 ? i + 1 : filters.page - 3 + i;
-                  if (p < 1 || p > totalPages) return null;
-                  return (
-                    <PageBtn key={p} active={p === filters.page} onClick={() => handleFilterChange({ page: p })}>
-                      {p}
-                    </PageBtn>
-                  );
-                })}
-                <PageBtn disabled={filters.page >= totalPages} onClick={() => handleFilterChange({ page: filters.page + 1 })}>Próxima →</PageBtn>
-              </div>
-            )}
-          </>
-        )}
+          )}
       </main>
 
       <AiModal imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)} />

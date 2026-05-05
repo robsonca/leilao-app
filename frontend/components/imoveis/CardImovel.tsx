@@ -48,35 +48,39 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
       }}
     >
       {/* Foto Street View */}
-      <div style={{ position: 'relative', width: '100%', height: 180, background: '#F3F4F6', overflow: 'hidden' }}>
-        {!imgLoaded && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(90deg,#E5E7EB 25%,#F3F4F6 50%,#E5E7EB 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.5s infinite',
-          }} />
-        )}
-        {imgOk ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={streetViewUrl(imovel.endereco, { width: 640, height: 400 })}
-            alt={`${imovel.tipo} em ${imovel.bairro}`}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => { setImgOk(false); setImgLoaded(true); }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: imgLoaded ? 'block' : 'none', transition: 'transform 0.4s' }}
-          />
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 13, color: 'var(--text-muted)' }}>
-            📷 Foto indisponível
-          </div>
-        )}
+      <div style={{ position: 'relative', width: '100%', height: 180, background: '#F3F4F6' }}>
+        {/* Image layer — overflow:hidden applied only here so it doesn't block button clicks */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 0 }}>
+          {!imgLoaded && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(90deg,#E5E7EB 25%,#F3F4F6 50%,#E5E7EB 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite',
+            }} />
+          )}
+          {imgOk ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={streetViewUrl(imovel.endereco, { width: 640, height: 400 })}
+              alt={`${imovel.tipo} em ${imovel.bairro}`}
+              onLoad={() => setImgLoaded(true)}
+              onError={() => { setImgOk(false); setImgLoaded(true); }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: imgLoaded ? 'block' : 'none', transition: 'transform 0.4s' }}
+            />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 13, color: 'var(--text-muted)' }}>
+              📷 Foto indisponível
+            </div>
+          )}
+        </div>
 
         {/* Badge tipo */}
         <span style={{
           position: 'absolute', top: 10, left: 10,
           background: 'var(--white)', fontSize: 11, fontWeight: 700,
           padding: '3px 9px', borderRadius: 6, boxShadow: 'var(--shadow-sm)',
+          zIndex: 1,
         }}>
           {imovel.tipo}
         </span>
@@ -88,6 +92,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
             background: 'var(--brand)', color: 'white',
             fontSize: 11, fontWeight: 800,
             padding: '3px 9px', borderRadius: 6,
+            zIndex: 1,
           }}>
             -{formatPct(imovel.desconto)}
           </span>
@@ -103,6 +108,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
           transform: heartPop ? 'scale(1.35)' : 'scale(1)',
           transition: 'transform 0.2s cubic-bezier(.36,2,.6,1)',
+          zIndex: 2,
         }}>
           <Heart filled={isFav} />
         </button>

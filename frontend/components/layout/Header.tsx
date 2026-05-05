@@ -1,14 +1,18 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 interface HeaderProps {
-  total: number;
+  total?: number;
   onMenuClick: () => void;
   favCount?: number;
-  onFavClick?: () => void;
-  showingFavs?: boolean;
 }
 
-export default function Header({ total, onMenuClick, favCount = 0, onFavClick, showingFavs = false }: HeaderProps) {
+export default function Header({ total = 0, onMenuClick, favCount = 0 }: HeaderProps) {
+  const pathname = usePathname();
+  const onFavPage = pathname === '/favoritos';
+
   return (
     <header style={{
       background: 'var(--white)',
@@ -55,12 +59,13 @@ export default function Header({ total, onMenuClick, favCount = 0, onFavClick, s
         )}
 
         {/* Botão favoritos */}
-        <button onClick={onFavClick} style={{
+        <Link href="/favoritos" style={{
           position: 'relative',
-          background: showingFavs ? 'var(--brand-light)' : 'none',
-          border: `1px solid ${showingFavs ? 'var(--brand)' : 'var(--border)'}`,
+          background: onFavPage ? 'var(--brand-light)' : 'none',
+          border: `1px solid ${onFavPage ? 'var(--brand)' : 'var(--border)'}`,
           borderRadius: 8, padding: '6px 10px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 6,
+          textDecoration: 'none',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24"
             fill={favCount > 0 ? '#F04E37' : 'none'}
@@ -70,13 +75,11 @@ export default function Header({ total, onMenuClick, favCount = 0, onFavClick, s
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
           {favCount > 0 && (
-            <span style={{
-              fontSize: 12, fontWeight: 700, color: 'var(--brand)',
-            }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand)' }}>
               {favCount}
             </span>
           )}
-        </button>
+        </Link>
 
         <button
           onClick={onMenuClick}
