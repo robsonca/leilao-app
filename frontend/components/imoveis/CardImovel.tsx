@@ -176,22 +176,31 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           <button
             onClick={() => onAnalise(imovel)}
             style={{
-              flex: 1, padding: '12px 0', borderRadius: 8,
-              background: 'var(--brand)', color: 'white',
-              border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+              flex: 1, padding: '11px 0', borderRadius: 10,
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              color: 'white', border: 'none', fontWeight: 700,
+              fontSize: 13, cursor: 'pointer', letterSpacing: '0.01em',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
             }}
           >
-            🤖 Analisar
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+              <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+            Analisar com IA
           </button>
           {imovel.link && (
             <a
               href={imovel.link} target="_blank" rel="noopener noreferrer"
               style={{
-                padding: '10px 14px', borderRadius: 8,
+                padding: '11px 14px', borderRadius: 10,
                 border: '1px solid var(--border)', color: 'var(--text-secondary)',
-                fontSize: 13, fontWeight: 600, textDecoration: 'none',
-                display: 'flex', alignItems: 'center',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--white)',
               }}
+              title="Ver no site da CEF"
             >
               ↗
             </a>
