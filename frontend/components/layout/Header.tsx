@@ -12,7 +12,7 @@ export default function Header({ total, onMenuClick, favCount = 0, onFavClick }:
     <header style={{
       background: 'var(--white)',
       borderBottom: '1px solid var(--border)',
-      padding: '0 24px',
+      padding: '0 16px',
       height: 60,
       display: 'flex',
       alignItems: 'center',
@@ -48,7 +48,7 @@ export default function Header({ total, onMenuClick, favCount = 0, onFavClick }:
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {total > 0 && (
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          <span className="header-total">
             <strong style={{ color: 'var(--brand)' }}>{total.toLocaleString('pt-BR')}</strong> imóveis
           </span>
         )}

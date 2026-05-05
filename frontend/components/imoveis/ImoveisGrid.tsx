@@ -12,10 +12,10 @@ interface Props {
 export default function ImoveisGrid({ imoveis, loading, onAnalise, isFav, onToggleFav }: Props) {
   if (loading) {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-        {Array.from({ length: 9 }).map((_, i) => (
+      <div className="imoveis-skeleton">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} style={{
-            height: 380, borderRadius: 'var(--radius)',
+            height: 360, borderRadius: 'var(--radius)',
             background: 'linear-gradient(90deg,#E5E7EB 25%,#F3F4F6 50%,#E5E7EB 75%)',
             backgroundSize: '200% 100%',
             animation: 'shimmer 1.5s infinite',
@@ -36,7 +36,7 @@ export default function ImoveisGrid({ imoveis, loading, onAnalise, isFav, onTogg
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+    <div className="imoveis-grid">
       {imoveis.map(imovel => (
         <CardImovel key={imovel.id} imovel={imovel} onAnalise={onAnalise}
           isFav={isFav?.(imovel.id)}

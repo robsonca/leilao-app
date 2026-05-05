@@ -100,7 +100,7 @@ export default function FilterBar({ filters, cidades, onChange, onClear, total }
     return (
       <div style={{
         background: 'var(--white)', borderRadius: 20,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '28px 24px 24px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '20px 16px 20px',
         marginBottom: 24,
       }}>
 
@@ -158,7 +158,7 @@ export default function FilterBar({ filters, cidades, onChange, onClear, total }
         </div>
 
         {/* Valor + Modalidade */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+        <div className="filter-row-2col">
           <div>
             <label style={labelStyle}>
               <span style={iconStyle}>💰</span> Valor total

@@ -73,7 +73,7 @@ export default function Home() {
         onGeminiKeyChange={setGeminiKey}
       />
 
-      <main style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
+      <main className="main-container">
         {/* Filtros */}
         <FilterBar
           filters={filters}
@@ -84,8 +84,8 @@ export default function Home() {
         />
 
         {/* Cabeçalho da listagem */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="listing-header">
+          <div className="listing-header-left">
             <p style={{ fontWeight: 700, fontSize: 15 }}>Imóveis</p>
             <select
               value={filters.orderBy}

@@ -48,7 +48,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
       }}
     >
       {/* Foto Street View */}
-      <div style={{ position: 'relative', width: '100%', height: 200, background: '#F3F4F6', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', height: 180, background: '#F3F4F6', overflow: 'hidden' }}>
         {!imgLoaded && (
           <div style={{
             position: 'absolute', inset: 0,
@@ -151,9 +151,9 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           <button
             onClick={() => onAnalise(imovel)}
             style={{
-              flex: 1, padding: '10px 0', borderRadius: 8,
+              flex: 1, padding: '12px 0', borderRadius: 8,
               background: 'var(--brand)', color: 'white',
-              border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+              border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer',
             }}
           >
             🤖 Analisar
