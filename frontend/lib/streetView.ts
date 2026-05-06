@@ -17,3 +17,7 @@ export function streetViewUrl(endereco: string, opts: StreetViewOpts = {}): stri
     `&key=${API_KEY}`
   );
 }
+
+export function streetViewWebUrl(endereco: string): string {
+  return `https://www.google.com/maps?q=${encodeURIComponent(endereco)}&layer=c`;
+}

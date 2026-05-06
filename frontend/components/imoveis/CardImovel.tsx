@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { ImovelComScore } from '../../lib/types';
-import { streetViewUrl } from '../../lib/streetView';
+import { streetViewUrl, streetViewWebUrl } from '../../lib/streetView';
 import { formatBRL, formatPct } from '../../lib/format';
 
 interface Props {
@@ -66,7 +66,8 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
               alt={`${imovel.tipo} em ${imovel.bairro}`}
               onLoad={() => setImgLoaded(true)}
               onError={() => { setImgOk(false); setImgLoaded(true); }}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: imgLoaded ? 'block' : 'none', transition: 'transform 0.4s' }}
+              loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: imgLoaded ? 'block' : 'none', transition: 'transform 0.4s' }}
             />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 13, color: 'var(--text-muted)' }}>
@@ -96,6 +97,34 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           }}>
             -{formatPct(imovel.desconto)}
           </span>
+        )}
+
+        {/* Link Street View */}
+        {imgOk && imgLoaded && (
+          <a
+            href={streetViewWebUrl(imovel.endereco)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            title="Ver no Google Street View"
+            style={{
+              position: 'absolute', bottom: 10, left: 10,
+              background: 'rgba(255,255,255,0.92)',
+              border: 'none', borderRadius: 6, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 9px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              textDecoration: 'none',
+              fontSize: 11, fontWeight: 700, color: '#1a73e8',
+              zIndex: 2,
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            Street View
+          </a>
         )}
 
         {/* Botão favorito */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Header from '../components/layout/Header';
 import Sidebar from '../components/layout/Sidebar';
 import FilterBar from '../components/filters/FilterBar';
@@ -15,7 +15,7 @@ import type { FilterState, ImovelComScore } from '../lib/types';
 
 const DEFAULT_FILTERS: FilterState = {
   cidade: '', tipo: '', modalidade: '', financiamento: '',
-  precoMin: '', precoMax: '', page: 1, limit: 15, orderBy: 'desconto_desc',
+  precoMin: '', precoMax: '', page: 1, limit: 6, orderBy: 'desconto_desc',
 };
 
 export default function Home() {
@@ -29,13 +29,15 @@ export default function Home() {
   const [view, setView] = useState<ViewMode>('grid');
   const [geminiKey, setGeminiKey] = useState('');
   const [selectedImovel, setSelectedImovel] = useState<ImovelComScore | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { isFav, toggle: toggleFav, count: favCount } = useFavorites();
 
   const loadImoveis = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchImoveis(filters);
-      setImoveis(enriquece(res.data));
+      const novos = enriquece(res.data);
+      setImoveis(prev => filters.page === 1 ? novos : [...prev, ...novos]);
       setTotal(res.total);
       setTotalPages(res.totalPages);
     } catch (e) {
@@ -48,13 +50,35 @@ export default function Home() {
   useEffect(() => { loadImoveis(); }, [loadImoveis]);
   useEffect(() => { fetchCidades().then(setCidades).catch(console.error); }, []);
 
+  // Scroll infinito: observa o sentinel só quando não está carregando e há mais páginas
+  useEffect(() => {
+    if (loading || filters.page >= totalPages) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFilters(prev => ({ ...prev, page: prev.page + 1 }));
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loading, filters.page, totalPages]);
+
   function handleFilterChange(partial: Partial<FilterState>) {
     setFilters(prev => ({ ...prev, ...partial }));
   }
 
   function handleClear() {
+    setImoveis([]);
     setFilters(DEFAULT_FILTERS);
   }
+
+  const isFirstLoad = loading && imoveis.length === 0;
+  const isLoadingMore = loading && imoveis.length > 0;
+  const hasMore = filters.page < totalPages;
 
   return (
     <>
@@ -77,78 +101,67 @@ export default function Home() {
       />
 
       <main className="main-container">
+        <FilterBar
+          filters={filters}
+          cidades={cidades}
+          onChange={handleFilterChange}
+          onClear={handleClear}
+          total={total}
+        />
 
-        {/* View favoritos */}
-          {/* Filtros */}
-          <FilterBar
-            filters={filters}
-            cidades={cidades}
-            onChange={handleFilterChange}
-            onClear={handleClear}
-            total={total}
-          />
-
-          {/* Cabeçalho da listagem */}
-          <div className="listing-header">
-            <div className="listing-header-left">
-              <p style={{ fontWeight: 700, fontSize: 15 }}>Imóveis</p>
-              <select
-                value={filters.orderBy}
-                onChange={e => handleFilterChange({ orderBy: e.target.value as FilterState['orderBy'], page: 1 })}
-                style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--white)', cursor: 'pointer' }}
-              >
-                <option value="desconto_desc">Maior desconto</option>
-                <option value="preco_asc">Menor preço</option>
-                <option value="preco_desc">Maior preço</option>
-                <option value="cidade_asc">Cidade A-Z</option>
-              </select>
-            </div>
-            <ViewToggle view={view} onChange={setView} />
+        <div className="listing-header">
+          <div className="listing-header-left">
+            <p style={{ fontWeight: 700, fontSize: 15 }}>Imóveis</p>
+            <select
+              value={filters.orderBy}
+              onChange={e => handleFilterChange({ orderBy: e.target.value as FilterState['orderBy'], page: 1 })}
+              style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--white)', cursor: 'pointer' }}
+            >
+              <option value="desconto_desc">Maior desconto</option>
+              <option value="preco_asc">Menor preço</option>
+              <option value="preco_desc">Maior preço</option>
+              <option value="cidade_asc">Cidade A-Z</option>
+            </select>
           </div>
+          <ViewToggle view={view} onChange={setView} />
+        </div>
 
-          {/* Listagem */}
-          {view === 'grid' ? (
-            <ImoveisGrid imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel}
-              isFav={isFav} onToggleFav={toggleFav} />
-          ) : (
-            <ImoveisTable imoveis={imoveis} loading={loading} onAnalise={setSelectedImovel} />
-          )}
+        {view === 'grid' ? (
+          <ImoveisGrid
+            imoveis={imoveis}
+            loading={isFirstLoad}
+            onAnalise={setSelectedImovel}
+            isFav={isFav}
+            onToggleFav={toggleFav}
+          />
+        ) : (
+          <ImoveisTable imoveis={imoveis} loading={isFirstLoad} onAnalise={setSelectedImovel} />
+        )}
 
-          {/* Paginação */}
-          {!loading && totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginTop: 28 }}>
-              <PageBtn disabled={filters.page <= 1} onClick={() => handleFilterChange({ page: filters.page - 1 })}>← Anterior</PageBtn>
-              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                const p = filters.page <= 4 ? i + 1 : filters.page - 3 + i;
-                if (p < 1 || p > totalPages) return null;
-                return (
-                  <PageBtn key={p} active={p === filters.page} onClick={() => handleFilterChange({ page: p })}>
-                    {p}
-                  </PageBtn>
-                );
-              })}
-              <PageBtn disabled={filters.page >= totalPages} onClick={() => handleFilterChange({ page: filters.page + 1 })}>Próxima →</PageBtn>
-            </div>
-          )}
+        {/* Sentinel para IntersectionObserver */}
+        {hasMore && <div ref={sentinelRef} style={{ height: 1 }} />}
+
+        {/* Spinner de "carregando mais" */}
+        {isLoadingMore && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              border: '3px solid var(--border)',
+              borderTopColor: 'var(--brand)',
+              animation: 'spin 0.7s linear infinite',
+            }} />
+          </div>
+        )}
+
+        {/* Fim da lista */}
+        {!loading && !hasMore && imoveis.length > 0 && (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: '24px 0' }}>
+            Todos os {total.toLocaleString('pt-BR')} imóveis carregados
+          </p>
+        )}
       </main>
 
       <AiModal imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)} />
     </>
-  );
-}
-
-function PageBtn({ children, onClick, disabled, active }: {
-  children: React.ReactNode; onClick?: () => void; disabled?: boolean; active?: boolean;
-}) {
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-      border: '1px solid var(--border)', cursor: disabled ? 'default' : 'pointer',
-      background: active ? 'var(--brand)' : 'var(--white)',
-      color: active ? 'white' : disabled ? 'var(--text-muted)' : 'var(--text-primary)',
-      opacity: disabled ? 0.4 : 1,
-    }}>
-      {children}
-    </button>
   );
 }
