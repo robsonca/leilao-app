@@ -161,7 +161,7 @@ export default function Home() {
         )}
       </main>
 
-      <AiModal imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)}
+      <AiModal key={selectedImovel?.id} imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)}
         isFav={selectedImovel ? isFav(selectedImovel.id) : false}
         onToggleFav={toggleFav}
       />

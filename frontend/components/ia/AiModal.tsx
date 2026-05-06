@@ -20,7 +20,7 @@ const SCORE_STYLE = {
 };
 
 export default function AiModal({ imovel, onClose, isFav = false, onToggleFav }: Props) {
-  const [imgOk, setImgOk] = useState(true);
+  const [imgSrc, setImgSrc] = useState<'cef' | 'streetview' | 'none'>('cef');
   const [heartPop, setHeartPop] = useState(false);
 
   function handleFav(e: React.MouseEvent) {
@@ -57,15 +57,25 @@ export default function AiModal({ imovel, onClose, isFav = false, onToggleFav }:
       >
         {/* Foto */}
         <div style={{ position: 'relative', height: 200, background: '#F3F4F6', flexShrink: 0 }}>
-          {imgOk ? (
+          {imgSrc === 'cef' && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`https://venda-imoveis.caixa.gov.br/fotos/F${imovel.numero.replace(/-/g, '')}21.jpg`}
+              alt={imovel.endereco}
+              onError={() => setImgSrc('streetview')}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          )}
+          {imgSrc === 'streetview' && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={streetViewUrl(imovel, { width: 800, height: 400 })}
               alt={imovel.endereco}
-              onError={() => setImgOk(false)}
+              onError={() => setImgSrc('none')}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
-          ) : (
+          )}
+          {imgSrc === 'none' && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 13, color: 'var(--text-muted)' }}>
               📷 Foto indisponível
             </div>
@@ -209,35 +219,55 @@ export default function AiModal({ imovel, onClose, isFav = false, onToggleFav }:
           )}
 
           {/* Ações */}
-          <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
-            {imovel.link && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+            <a
+              href={`https://venda-imoveis.caixa.gov.br/editais/matricula/SP/${imovel.numero.replace(/-/g, '')}.pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '12px 0', borderRadius: 10,
+                background: 'var(--brand)', color: 'white',
+                fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                boxShadow: '0 2px 8px rgba(240,78,55,0.25)',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+              Abrir Edital (PDF)
+            </a>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {imovel.link && (
+                <a
+                  href={imovel.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1, padding: '11px 0', borderRadius: 10,
+                    border: '1.5px solid var(--border)', color: 'var(--text-secondary)',
+                    fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}
+                >
+                  Site CEF ↗
+                </a>
+              )}
               <a
-                href={imovel.link}
+                href={streetViewWebUrl(imovel)}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
                   flex: 1, padding: '11px 0', borderRadius: 10,
-                  border: '1.5px solid var(--brand)', color: 'var(--brand)',
+                  border: '1.5px solid var(--border)', color: 'var(--text-secondary)',
                   fontSize: 13, fontWeight: 700, textDecoration: 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                Ver no site da CEF ↗
+                🗺 Street View
               </a>
-            )}
-            <a
-              href={streetViewWebUrl(imovel)}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                flex: 1, padding: '11px 0', borderRadius: 10,
-                border: '1.5px solid var(--border)', color: 'var(--text-secondary)',
-                fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}
-            >
-              🗺 Street View
-            </a>
+            </div>
           </div>
         </div>
       </div>

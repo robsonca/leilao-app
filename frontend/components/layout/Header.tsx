@@ -38,7 +38,7 @@ export default function Header({ total = 0, onMenuClick, favCount = 0 }: HeaderP
           🏠
         </div>
         <div>
-          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px' }}>BR Leilões</span>
+          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px' }}>LanceCerto</span>
           <span style={{
             marginLeft: 8,
             background: 'var(--brand-light)',

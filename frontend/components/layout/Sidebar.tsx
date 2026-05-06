@@ -80,7 +80,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             }}>
               🏠
             </div>
-            <span style={{ fontWeight: 800, fontSize: 15 }}>BR Leilões</span>
+            <span style={{ fontWeight: 800, fontSize: 15 }}>LanceCerto</span>
           </div>
           <button onClick={onClose} style={{
             background: 'none', border: '1px solid var(--border)',
