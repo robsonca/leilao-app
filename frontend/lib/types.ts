@@ -41,6 +41,20 @@ export interface KpiData {
   porModalidade: { modalidade: string; count: number }[];
 }
 
+export interface Insights {
+  totais: {
+    total: number;
+    precoMedio: number;
+    descontoMedio: number;
+    comFinanciamento: number;
+    totalCidades: number;
+  };
+  topCidadesPorVolume: { cidade: string; count: number }[];
+  topCidadesPorDesconto: { cidade: string; count: number; descontoMedio: number }[];
+  porTipo: { tipo: string; count: number }[];
+  porModalidade: { modalidade: string; count: number }[];
+}
+
 export interface FilterState {
   cidade: string;
   tipo: string;

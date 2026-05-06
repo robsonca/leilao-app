@@ -1,193 +1,272 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import type { ImovelComScore } from '../../lib/types';
 import { formatBRL, formatPct } from '../../lib/format';
+import { streetViewUrl, streetViewWebUrl } from '../../lib/streetView';
+import { useState } from 'react';
 
 interface Props {
   imovel: ImovelComScore | null;
   geminiKey: string;
   onClose: () => void;
+  isFav?: boolean;
+  onToggleFav?: (imovel: ImovelComScore) => void;
 }
 
-interface Sections {
-  OPORTUNIDADE?: string;
-  PRECO_VALOR?: string;
-  LIQUIDEZ?: string;
-  RISCOS?: string;
-  VEREDICTO?: string;
-}
-
-type Veredicto = 'OPORTUNIDADE' | 'CAUTELA' | 'NEUTRO';
-
-const VEREDICTO_STYLE: Record<Veredicto, { bg: string; color: string; icon: string }> = {
-  OPORTUNIDADE: { bg: 'var(--green-bg)', color: 'var(--green)', icon: '✅' },
-  NEUTRO: { bg: 'var(--yellow-bg)', color: 'var(--yellow)', icon: '⚠️' },
-  CAUTELA: { bg: 'var(--red-bg)', color: 'var(--red)', icon: '🚨' },
+const SCORE_STYLE = {
+  oportunidade: { bg: 'var(--green-bg)', color: 'var(--green)', label: '↑ Oportunidade' },
+  neutro:       { bg: 'var(--yellow-bg)', color: 'var(--yellow)', label: '→ Neutro' },
+  cautela:      { bg: 'var(--red-bg)', color: 'var(--red)', label: '↓ Cautela' },
 };
 
-function parseSections(text: string): Sections {
-  const keys = ['OPORTUNIDADE', 'PRECO_VALOR', 'LIQUIDEZ', 'RISCOS', 'VEREDICTO'] as const;
-  const result: Sections = {};
-  keys.forEach((key) => {
-    const re = new RegExp(`\\[${key}\\]([\\s\\S]*?)(?=\\[(?:${keys.join('|')})\\]|$)`, 'i');
-    const m = text.match(re);
-    if (m) result[key] = m[1].trim();
-  });
-  return result;
-}
+export default function AiModal({ imovel, onClose, isFav = false, onToggleFav }: Props) {
+  const [imgOk, setImgOk] = useState(true);
+  const [heartPop, setHeartPop] = useState(false);
 
-function detectVeredicto(text: string): Veredicto {
-  const upper = text.toUpperCase();
-  if (upper.includes('OPORTUNIDADE')) return 'OPORTUNIDADE';
-  if (upper.includes('CAUTELA')) return 'CAUTELA';
-  return 'NEUTRO';
-}
-
-export default function AiModal({ imovel, geminiKey, onClose }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [sections, setSections] = useState<Sections | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!imovel) { setSections(null); setError(''); return; }
-    if (!geminiKey) { setError('Configure sua chave do Gemini na sidebar (⚙️)'); return; }
-    analyze();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imovel]);
-
-  async function analyze() {
-    if (!imovel || !geminiKey) return;
-    setLoading(true); setError(''); setSections(null);
-
-    const MEDIANA = 148667;
-    const diff = ((imovel.preco - MEDIANA) / MEDIANA * 100).toFixed(0);
-    const posicao = imovel.preco < MEDIANA ? `${Math.abs(Number(diff))}% abaixo` : `${diff}% acima`;
-
-    const prompt = `Você é um especialista em leilões imobiliários no Brasil. Analise este imóvel:
-
-[DADOS]
-- Imóvel: ${imovel.tipo} em ${imovel.cidade} / ${imovel.bairro}
-- Endereço: ${imovel.endereco}
-- Preço: ${formatBRL(imovel.preco)}${imovel.desconto ? ` (${formatPct(imovel.desconto)} de desconto)` : ''}
-- Posição vs mediana SP (${formatBRL(MEDIANA)}): ${posicao} da mediana
-- Financiamento: ${imovel.financiamento ? 'Disponível' : 'Não disponível'}
-- Modalidade: ${imovel.modalidade}
-${imovel.descricao ? `- Descrição: ${imovel.descricao}` : ''}
-
-Responda obrigatoriamente neste formato com as 5 seções:
-
-[OPORTUNIDADE]
-Análise geral do potencial da oportunidade.
-
-[PRECO_VALOR]
-Avaliação do preço, desconto e posição vs mercado.
-
-[LIQUIDEZ]
-Facilidade de revenda, perfil de compradores, demanda.
-
-[RISCOS]
-Riscos: modalidade, jurídico, localização, estado do imóvel.
-
-[VEREDICTO]
-Uma frase conclusiva. Classifique como exatamente uma destas palavras: OPORTUNIDADE, NEUTRO ou CAUTELA.`;
-
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        },
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message ?? 'Erro na API Gemini');
-      const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-      setSections(parseSections(text));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao chamar Gemini');
-    } finally {
-      setLoading(false);
-    }
+  function handleFav(e: React.MouseEvent) {
+    e.stopPropagation();
+    onToggleFav?.(imovel!);
+    setHeartPop(true);
+    setTimeout(() => setHeartPop(false), 300);
   }
 
   if (!imovel) return null;
 
-  const veredicto = sections?.VEREDICTO ? detectVeredicto(sections.VEREDICTO) : null;
-  const vs = veredicto ? VEREDICTO_STYLE[veredicto] : null;
+  const score = SCORE_STYLE[imovel.classificacao];
+  const precoOriginal = imovel.desconto && imovel.desconto > 0
+    ? imovel.preco / (1 - imovel.desconto / 100)
+    : null;
 
   return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-      backdropFilter: 'blur(4px)', zIndex: 300,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-    }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: 'var(--white)', borderRadius: 18,
-        border: '1px solid var(--border)', width: '100%', maxWidth: 640,
-        maxHeight: '88vh', display: 'flex', flexDirection: 'column',
-        boxShadow: 'var(--shadow-hover)',
-      }}>
-        {/* Header */}
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>🤖 Análise com IA</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{imovel.tipo} — {imovel.bairro}, {imovel.cidade}</p>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(4px)', zIndex: 300,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--white)', borderRadius: 18,
+          border: '1px solid var(--border)', width: '100%', maxWidth: 560,
+          maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+          boxShadow: 'var(--shadow-hover)', overflow: 'hidden',
+        }}
+      >
+        {/* Foto */}
+        <div style={{ position: 'relative', height: 200, background: '#F3F4F6', flexShrink: 0 }}>
+          {imgOk ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={streetViewUrl(imovel, { width: 800, height: 400 })}
+              alt={imovel.endereco}
+              onError={() => setImgOk(false)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 13, color: 'var(--text-muted)' }}>
+              📷 Foto indisponível
+            </div>
+          )}
+
+          {/* Badge tipo */}
+          <span style={{
+            position: 'absolute', top: 12, left: 12,
+            background: 'var(--white)', fontSize: 12, fontWeight: 700,
+            padding: '4px 10px', borderRadius: 6, boxShadow: 'var(--shadow-sm)',
+          }}>
+            {imovel.tipo}
+          </span>
+
+          {/* Badge desconto */}
+          {imovel.desconto && imovel.desconto > 0 && (
+            <span style={{
+              position: 'absolute', bottom: 12, left: 12,
+              background: 'var(--brand)', color: 'white',
+              fontSize: 12, fontWeight: 800,
+              padding: '4px 10px', borderRadius: 6,
+            }}>
+              -{formatPct(imovel.desconto)}
+            </span>
+          )}
+
+          {/* Botão favorito */}
+          <button
+            onClick={handleFav}
+            style={{
+              position: 'absolute', top: 12, right: 50,
+              background: 'rgba(255,255,255,0.92)', border: 'none',
+              borderRadius: '50%', width: 36, height: 36, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              transform: heartPop ? 'scale(1.35)' : 'scale(1)',
+              transition: 'transform 0.2s cubic-bezier(.36,2,.6,1)',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24"
+              fill={isFav ? '#F04E37' : 'none'}
+              stroke={isFav ? '#F04E37' : '#6B7280'}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ transition: 'fill 0.2s, stroke 0.2s' }}
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
+
+          {/* Botão fechar */}
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute', top: 12, right: 12,
+              background: 'rgba(255,255,255,0.92)', border: 'none',
+              borderRadius: 8, width: 30, height: 30, cursor: 'pointer',
+              fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Conteúdo scrollável */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Título + score */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <p style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
+                {imovel.tipo} — {imovel.bairro}
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                📍 {imovel.endereco}
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                {imovel.cidade}
+              </p>
+            </div>
+            <span style={{
+              flexShrink: 0,
+              background: score.bg, color: score.color,
+              fontSize: 12, fontWeight: 700,
+              padding: '5px 12px', borderRadius: 20,
+            }}>
+              {score.label}
+            </span>
           </div>
-          <button onClick={onClose} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, width: 30, height: 30, cursor: 'pointer', fontSize: 16 }}>×</button>
-        </div>
 
-        {/* Detalhes do imóvel */}
-        <div style={{ padding: '12px 24px', background: 'var(--bg)', borderBottom: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: '8px 20px' }}>
-          <Pill label="Preço" value={formatBRL(imovel.preco)} />
-          {imovel.desconto && <Pill label="Desconto" value={formatPct(imovel.desconto)} />}
-          <Pill label="Modalidade" value={imovel.modalidade} />
-          <Pill label="Financiamento" value={imovel.financiamento ? 'Sim' : 'Não'} />
-        </div>
+          {/* Preço */}
+          <div style={{ background: 'var(--bg)', borderRadius: 12, padding: '16px 20px' }}>
+            {precoOriginal ? (
+              <>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', textDecoration: 'line-through', marginBottom: 2 }}>
+                  De {formatBRL(precoOriginal)}
+                </p>
+                <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--brand)', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+                  {formatBRL(imovel.preco)}
+                </p>
+                <p style={{
+                  marginTop: 6, fontSize: 12, fontWeight: 700, color: 'var(--green)',
+                  background: 'var(--green-bg)', display: 'inline-block',
+                  padding: '3px 10px', borderRadius: 6,
+                }}>
+                  Economia de {formatBRL(precoOriginal - imovel.preco)} ({formatPct(imovel.desconto!)})
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>
+                {formatBRL(imovel.preco)}
+              </p>
+            )}
+          </div>
 
-        {/* Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
-          {loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '48px 0', color: 'var(--text-muted)' }}>
-              <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--brand)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              <p style={{ fontSize: 13 }}>Analisando com Gemini…</p>
+          {/* Specs */}
+          {(imovel.areaTotal || imovel.quartos || imovel.vagas) && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {imovel.areaTotal && <Spec icon="📐" label="Área" value={`${imovel.areaTotal} m²`} />}
+              {imovel.quartos   && <Spec icon="🛏" label="Quartos" value={String(imovel.quartos)} />}
+              {imovel.vagas     && <Spec icon="🚗" label="Vagas" value={String(imovel.vagas)} />}
             </div>
           )}
 
-          {error && (
-            <div style={{ background: 'var(--red-bg)', color: 'var(--red)', padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
-              {error}
+          {/* Tags */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Tag>{imovel.modalidade}</Tag>
+            {imovel.financiamento && <Tag accent>🏦 Aceita financiamento</Tag>}
+          </div>
+
+          {/* Descrição */}
+          {imovel.descricao && (
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 6 }}>
+                Descrição
+              </p>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                {imovel.descricao}
+              </p>
             </div>
           )}
 
-          {sections && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {vs && sections.VEREDICTO && (
-                <div style={{ background: vs.bg, color: vs.color, borderRadius: 10, padding: '12px 16px', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {vs.icon} {veredicto} — {sections.VEREDICTO}
-                </div>
-              )}
-              {(['OPORTUNIDADE', 'PRECO_VALOR', 'LIQUIDEZ', 'RISCOS'] as const).map(key => sections[key] && (
-                <div key={key}>
-                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--brand)', marginBottom: 6 }}>
-                    {key.replace('_', ' ')}
-                  </p>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)' }}>{sections[key]}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Ações */}
+          <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+            {imovel.link && (
+              <a
+                href={imovel.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 10,
+                  border: '1.5px solid var(--brand)', color: 'var(--brand)',
+                  fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                Ver no site da CEF ↗
+              </a>
+            )}
+            <a
+              href={streetViewWebUrl(imovel)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: 1, padding: '11px 0', borderRadius: 10,
+                border: '1.5px solid var(--border)', color: 'var(--text-secondary)',
+                fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}
+            >
+              🗺 Street View
+            </a>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Pill({ label, value }: { label: string; value: string }) {
+function Spec({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-      {label}: <strong style={{ color: 'var(--text-primary)' }}>{value}</strong>
+    <div style={{
+      background: 'var(--bg)', borderRadius: 10, padding: '10px 16px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, minWidth: 80,
+    }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ fontSize: 15, fontWeight: 800 }}>{value}</span>
+      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
+    </div>
+  );
+}
+
+function Tag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <span style={{
+      fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 20,
+      background: accent ? 'var(--green-bg)' : 'var(--bg)',
+      color: accent ? 'var(--green)' : 'var(--text-secondary)',
+      border: `1px solid ${accent ? 'var(--green)' : 'var(--border)'}`,
+    }}>
+      {children}
     </span>
   );
 }

@@ -1,4 +1,4 @@
-import type { FilterState, KpiData, PaginatedResponse, Imovel } from './types';
+import type { FilterState, KpiData, PaginatedResponse, Imovel, Insights } from './types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -35,6 +35,12 @@ export async function fetchCidades(): Promise<string[]> {
     next: { revalidate: 3600 },
   });
   if (!res.ok) throw new Error('Erro ao buscar cidades');
+  return res.json();
+}
+
+export async function fetchInsights(): Promise<Insights> {
+  const res = await fetch(`${BASE}/imoveis/insights`, { next: { revalidate: 3600 } });
+  if (!res.ok) throw new Error('Erro ao buscar insights');
   return res.json();
 }
 

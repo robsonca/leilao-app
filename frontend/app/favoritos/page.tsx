@@ -62,7 +62,10 @@ export default function FavoritosPage() {
         )}
       </main>
 
-      <AiModal imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)} />
+      <AiModal imovel={selectedImovel} geminiKey={geminiKey} onClose={() => setSelectedImovel(null)}
+        isFav={selectedImovel ? isFav(selectedImovel.id) : false}
+        onToggleFav={toggleFav}
+      />
     </>
   );
 }

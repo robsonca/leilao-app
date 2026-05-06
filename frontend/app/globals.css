@@ -74,6 +74,18 @@ body {
   margin-bottom: 20px;
 }
 
+.regioes-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.regioes-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 .header-total {
   font-size: 13px;
   color: var(--text-muted);
@@ -111,5 +123,13 @@ body {
 
   .header-total {
     display: none;
+  }
+
+  .regioes-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .regioes-grid-2 {
+    grid-template-columns: 1fr;
   }
 }

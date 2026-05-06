@@ -139,6 +139,73 @@ export class ImoveisService {
     };
   }
 
+  async getInsights() {
+    const [aggregate, comFinanciamento, topVolume, topDesconto, porTipo, porModalidade] =
+      await this.prisma.$transaction([
+        this.prisma.imovel.aggregate({
+          _count: { _all: true },
+          _avg: { preco: true, desconto: true },
+        }),
+        this.prisma.imovel.count({ where: { financiamento: true } }),
+        this.prisma.imovel.groupBy({
+          by: ['cidade'],
+          _count: { _all: true },
+          orderBy: { _count: { cidade: 'desc' } },
+          take: 10,
+        }),
+        this.prisma.imovel.groupBy({
+          by: ['cidade'],
+          where: { desconto: { gt: 0 } },
+          _avg: { desconto: true },
+          _count: { _all: true },
+          orderBy: { _avg: { desconto: 'desc' } },
+          take: 10,
+        }),
+        this.prisma.imovel.groupBy({
+          by: ['tipo'],
+          _count: { _all: true },
+          orderBy: { _count: { tipo: 'desc' } },
+        }),
+        this.prisma.imovel.groupBy({
+          by: ['modalidade'],
+          _count: { _all: true },
+          orderBy: { _count: { modalidade: 'desc' } },
+        }),
+      ]);
+
+    const totalCidades = await this.prisma.imovel.findMany({
+      select: { cidade: true },
+      distinct: ['cidade'],
+    });
+
+    return {
+      totais: {
+        total: (aggregate._count as { _all: number })._all,
+        precoMedio: aggregate._avg.preco ?? 0,
+        descontoMedio: aggregate._avg.desconto ?? 0,
+        comFinanciamento,
+        totalCidades: totalCidades.length,
+      },
+      topCidadesPorVolume: topVolume.map((c) => ({
+        cidade: c.cidade,
+        count: (c._count as { _all: number })._all,
+      })),
+      topCidadesPorDesconto: topDesconto.map((c) => ({
+        cidade: c.cidade,
+        count: (c._count as { _all: number })._all,
+        descontoMedio: c._avg?.desconto ?? 0,
+      })),
+      porTipo: porTipo.map((t) => ({
+        tipo: t.tipo,
+        count: (t._count as { _all: number })._all,
+      })),
+      porModalidade: porModalidade.map((m) => ({
+        modalidade: m.modalidade,
+        count: (m._count as { _all: number })._all,
+      })),
+    };
+  }
+
   async getCidades(): Promise<string[]> {
     const result = await this.prisma.imovel.findMany({
       select: { cidade: true },

@@ -38,6 +38,11 @@ export class ImoveisController {
     return this.imoveisService.getCidades();
   }
 
+  @Get('insights')
+  getInsights() {
+    return this.imoveisService.getInsights();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.imoveisService.findOne(id);

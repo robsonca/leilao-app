@@ -1,33 +1,51 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { uploadCsv } from '../../lib/api';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
-  geminiKey: string;
-  onGeminiKeyChange: (key: string) => void;
+  geminiKey?: string;
+  onGeminiKeyChange?: (key: string) => void;
 }
 
-export default function Sidebar({ open, onClose, geminiKey, onGeminiKeyChange }: SidebarProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [csvStatus, setCsvStatus] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [keyDraft, setKeyDraft] = useState(geminiKey);
+const NAV = [
+  {
+    label: 'Onde Investir',
+    href: '/regioes',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+      </svg>
+    ),
+    badge: null,
+  },
+  {
+    label: 'Calculadora',
+    href: null,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>
+        <line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/>
+      </svg>
+    ),
+    badge: 'Em breve',
+  },
+  {
+    label: 'Favoritos',
+    href: '/favoritos',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    ),
+    badge: null,
+  },
+];
 
-  async function handleFile(file: File) {
-    setUploading(true);
-    setCsvStatus(null);
-    try {
-      const res = await uploadCsv(file);
-      setCsvStatus({ type: 'ok', msg: `${res.upserted} imóveis atualizados` });
-    } catch {
-      setCsvStatus({ type: 'err', msg: 'Erro ao processar CSV' });
-    } finally {
-      setUploading(false);
-    }
-  }
+export default function Sidebar({ open, onClose }: SidebarProps) {
+  const pathname = usePathname();
 
   return (
     <>
@@ -42,18 +60,28 @@ export default function Sidebar({ open, onClose, geminiKey, onGeminiKeyChange }:
       )}
 
       <aside style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 320,
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: 280,
         background: 'var(--white)', borderLeft: '1px solid var(--border)',
         zIndex: 201, display: 'flex', flexDirection: 'column',
         transform: open ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 0.3s cubic-bezier(.4,0,.2,1)',
         boxShadow: 'var(--shadow-md)',
       }}>
+
+        {/* Header */}
         <div style={{
           padding: '18px 20px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>⚙️ Configurações</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, background: 'var(--brand)',
+              borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+            }}>
+              🏠
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 15 }}>BR Leilões</span>
+          </div>
           <button onClick={onClose} style={{
             background: 'none', border: '1px solid var(--border)',
             borderRadius: 8, width: 30, height: 30, cursor: 'pointer',
@@ -61,79 +89,45 @@ export default function Sidebar({ open, onClose, geminiKey, onGeminiKeyChange }:
           }}>×</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* Upload CSV */}
-          <section>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Atualizar dados
-            </p>
-            <div
-              onClick={() => fileRef.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-              style={{
-                border: '2px dashed var(--border)', borderRadius: 10,
-                padding: '24px 16px', textAlign: 'center', cursor: 'pointer',
-                marginBottom: 12, transition: 'border-color 0.2s',
-              }}
-            >
-              <div style={{ fontSize: 28, marginBottom: 8 }}>📂</div>
-              <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Arraste o CSV aqui</p>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>ou clique para selecionar</p>
-            </div>
-            <input ref={fileRef} type="file" accept=".csv" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-
-            {uploading && <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>Processando…</p>}
-            {csvStatus && (
-              <p style={{
-                fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
-                background: csvStatus.type === 'ok' ? 'var(--green-bg)' : 'var(--red-bg)',
-                color: csvStatus.type === 'ok' ? 'var(--green)' : 'var(--red)',
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: '12px 12px' }}>
+          {NAV.map(item => {
+            const active = item.href ? pathname === item.href : false;
+            const inner = (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '13px 16px', borderRadius: 10,
+                background: active ? 'var(--brand-light)' : 'transparent',
+                color: active ? 'var(--brand)' : item.badge ? 'var(--text-muted)' : 'var(--text-primary)',
+                cursor: item.href ? 'pointer' : 'default',
+                transition: 'background 0.15s',
               }}>
-                {csvStatus.msg}
-              </p>
-            )}
-          </section>
+                <span style={{ color: active ? 'var(--brand)' : item.badge ? 'var(--text-muted)' : 'var(--text-secondary)', flexShrink: 0 }}>
+                  {item.icon}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{item.label}</span>
+                {item.badge && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                    background: 'var(--bg)', color: 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                  }}>
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+            );
 
-          {/* Gemini API Key */}
-          <section>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Análise com IA (Gemini)
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.6 }}>
-              Necessário para análise individual dos imóveis. Obtenha sua chave em{' '}
-              <a href="https://aistudio.google.com" target="_blank" rel="noopener" style={{ color: 'var(--brand)' }}>
-                aistudio.google.com
-              </a>
-            </p>
-            <input
-              type="password"
-              value={keyDraft}
-              onChange={(e) => setKeyDraft(e.target.value)}
-              placeholder="AIza..."
-              style={{
-                width: '100%', padding: '9px 12px', borderRadius: 8,
-                border: '1px solid var(--border)', fontSize: 13,
-                fontFamily: 'monospace', outline: 'none', marginBottom: 10,
-              }}
-            />
-            <button
-              onClick={() => onGeminiKeyChange(keyDraft)}
-              style={{
-                width: '100%', padding: '10px 14px', borderRadius: 8,
-                background: 'var(--brand)', color: 'white', border: 'none',
-                fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              }}
-            >
-              Salvar chave
-            </button>
-            {geminiKey && (
-              <p style={{ marginTop: 10, fontSize: 12, color: 'var(--green)', fontWeight: 600, textAlign: 'center' }}>
-                ✓ Chave configurada
-              </p>
-            )}
-          </section>
-        </div>
+            if (item.href) {
+              return (
+                <Link key={item.label} href={item.href} onClick={onClose} style={{ textDecoration: 'none', display: 'block' }}>
+                  {inner}
+                </Link>
+              );
+            }
+            return <div key={item.label}>{inner}</div>;
+          })}
+        </nav>
       </aside>
     </>
   );

@@ -212,18 +212,18 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
             onClick={() => onAnalise(imovel)}
             style={{
               flex: 1, padding: '11px 0', borderRadius: 10,
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              background: 'var(--brand)',
               color: 'white', border: 'none', fontWeight: 700,
               fontSize: 13, cursor: 'pointer', letterSpacing: '0.01em',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+              boxShadow: '0 2px 8px rgba(240,78,55,0.25)',
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
-              <path d="M12 16v-4M12 8h.01"/>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
-            Analisar com IA
+            Análise do Imóvel
           </button>
           {imovel.link && (
             <a
