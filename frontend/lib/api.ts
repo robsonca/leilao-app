@@ -38,6 +38,13 @@ export async function fetchCidades(): Promise<string[]> {
   return res.json();
 }
 
+export async function fetchBairros(cidade?: string): Promise<string[]> {
+  const url = cidade ? `${BASE}/imoveis/bairros?cidade=${encodeURIComponent(cidade)}` : `${BASE}/imoveis/bairros`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Erro ao buscar bairros');
+  return res.json();
+}
+
 export async function fetchInsights(): Promise<Insights> {
   const res = await fetch(`${BASE}/imoveis/insights`, { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error('Erro ao buscar insights');

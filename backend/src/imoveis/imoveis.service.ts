@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 
 export interface FilterImoveisDto {
   cidade?: string;
+  bairro?: string;
   tipo?: string;
   modalidade?: string;
   financiamento?: string;
@@ -21,6 +22,7 @@ export class ImoveisService {
   async findAll(filters: FilterImoveisDto = {}) {
     const {
       cidade,
+      bairro,
       tipo,
       modalidade,
       financiamento,
@@ -33,6 +35,7 @@ export class ImoveisService {
 
     const where: Prisma.ImovelWhereInput = {
       ...(cidade && { cidade: { contains: cidade, mode: 'insensitive' } }),
+      ...(bairro && { bairro: { contains: bairro, mode: 'insensitive' } }),
       ...(tipo && { tipo: { contains: tipo, mode: 'insensitive' } }),
       ...(modalidade && { modalidade: { contains: modalidade, mode: 'insensitive' } }),
       ...(financiamento !== undefined && financiamento !== '' && {
@@ -77,10 +80,11 @@ export class ImoveisService {
   }
 
   async getKpis(filters: Omit<FilterImoveisDto, 'page' | 'limit' | 'orderBy'> = {}) {
-    const { cidade, tipo, modalidade, financiamento, precoMin, precoMax } = filters;
+    const { cidade, bairro, tipo, modalidade, financiamento, precoMin, precoMax } = filters;
 
     const where: Prisma.ImovelWhereInput = {
       ...(cidade && { cidade: { contains: cidade, mode: 'insensitive' } }),
+      ...(bairro && { bairro: { contains: bairro, mode: 'insensitive' } }),
       ...(tipo && { tipo: { contains: tipo, mode: 'insensitive' } }),
       ...(modalidade && { modalidade: { contains: modalidade, mode: 'insensitive' } }),
       ...(financiamento !== undefined && financiamento !== '' && {
@@ -204,6 +208,16 @@ export class ImoveisService {
         count: (m._count as { _all: number })._all,
       })),
     };
+  }
+
+  async getBairros(cidade?: string): Promise<string[]> {
+    const result = await this.prisma.imovel.findMany({
+      where: cidade ? { cidade: { contains: cidade, mode: 'insensitive' } } : undefined,
+      select: { bairro: true },
+      distinct: ['bairro'],
+      orderBy: { bairro: 'asc' },
+    });
+    return result.map((r) => r.bairro);
   }
 
   async getCidades(): Promise<string[]> {

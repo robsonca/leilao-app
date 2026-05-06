@@ -27,7 +27,7 @@ export default function Header({ total = 0, onMenuClick, favCount = 0 }: HeaderP
       zIndex: 100,
       boxShadow: 'var(--shadow-sm)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
         <div style={{
           width: 36, height: 36,
           background: 'var(--brand)',
@@ -49,7 +49,7 @@ export default function Header({ total = 0, onMenuClick, favCount = 0 }: HeaderP
             🔴 Imóveis SP
           </span>
         </div>
-      </div>
+      </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {total > 0 && (

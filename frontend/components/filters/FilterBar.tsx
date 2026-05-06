@@ -17,15 +17,16 @@ const FAIXAS = [
 interface Props {
   filters: FilterState;
   cidades: string[];
+  bairros: string[];
   onChange: (f: Partial<FilterState>) => void;
   onClear: () => void;
   total: number;
 }
 
-type Pending = Pick<FilterState, 'cidade' | 'tipo' | 'modalidade' | 'financiamento' | 'precoMin' | 'precoMax'>;
+type Pending = Pick<FilterState, 'cidade' | 'bairro' | 'tipo' | 'modalidade' | 'financiamento' | 'precoMin' | 'precoMax'>;
 
 function toPending(f: FilterState): Pending {
-  return { cidade: f.cidade, tipo: f.tipo, modalidade: f.modalidade, financiamento: f.financiamento, precoMin: f.precoMin, precoMax: f.precoMax };
+  return { cidade: f.cidade, bairro: f.bairro, tipo: f.tipo, modalidade: f.modalidade, financiamento: f.financiamento, precoMin: f.precoMin, precoMax: f.precoMax };
 }
 
 function faixaLabel(min: string, max: string) {
@@ -35,6 +36,7 @@ function faixaLabel(min: string, max: string) {
 function summaryText(f: FilterState) {
   const parts: string[] = [];
   if (f.cidade) parts.push(f.cidade.charAt(0) + f.cidade.slice(1).toLowerCase());
+  if (f.bairro) parts.push(f.bairro.charAt(0) + f.bairro.slice(1).toLowerCase());
   if (f.tipo) parts.push(f.tipo);
   const fl = faixaLabel(f.precoMin, f.precoMax);
   if (fl) parts.push(fl);
@@ -43,21 +45,29 @@ function summaryText(f: FilterState) {
   return parts.join(' · ');
 }
 
-export default function FilterBar({ filters, cidades, onChange, onClear, total }: Props) {
-  const hasSearched = !!(filters.cidade || filters.tipo || filters.modalidade || filters.precoMin || filters.precoMax || filters.financiamento);
+export default function FilterBar({ filters, cidades, bairros, onChange, onClear, total }: Props) {
+  const hasSearched = !!(filters.cidade || filters.bairro || filters.tipo || filters.modalidade || filters.precoMin || filters.precoMax || filters.financiamento);
   const [panelOpen, setPanelOpen] = useState(!hasSearched);
   const [pending, setPending] = useState<Pending>(toPending(filters));
   const [cidadeInput, setCidadeInput] = useState(filters.cidade);
+  const [bairroInput, setBairroInput] = useState(filters.bairro);
   const [dropOpen, setDropOpen] = useState(false);
+  const [bairroDropOpen, setBairroDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+  const bairroDropRef = useRef<HTMLDivElement>(null);
 
   const cidadesFiltradas = cidades
     .filter(c => c.toLowerCase().includes(cidadeInput.toLowerCase()))
     .slice(0, 30);
 
+  const bairrosFiltrados = bairros
+    .filter(b => b.toLowerCase().includes(bairroInput.toLowerCase()))
+    .slice(0, 30);
+
   useEffect(() => {
     function onOutside(e: MouseEvent) {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false);
+      if (bairroDropRef.current && !bairroDropRef.current.contains(e.target as Node)) setBairroDropOpen(false);
     }
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
@@ -66,6 +76,7 @@ export default function FilterBar({ filters, cidades, onChange, onClear, total }
   function openPanel() {
     setPending(toPending(filters));
     setCidadeInput(filters.cidade);
+    setBairroInput(filters.bairro);
     setPanelOpen(true);
   }
 
@@ -76,8 +87,9 @@ export default function FilterBar({ filters, cidades, onChange, onClear, total }
 
   function handleClear() {
     onClear();
-    setPending({ cidade: '', tipo: '', modalidade: '', financiamento: '', precoMin: '', precoMax: '' });
+    setPending({ cidade: '', bairro: '', tipo: '', modalidade: '', financiamento: '', precoMin: '', precoMax: '' });
     setCidadeInput('');
+    setBairroInput('');
     setPanelOpen(true);
   }
 
@@ -121,7 +133,8 @@ export default function FilterBar({ filters, cidades, onChange, onClear, total }
               {cidadesFiltradas.map(c => (
                 <div key={c} onMouseDown={() => {
                   setCidadeInput(c);
-                  setPending(p => ({ ...p, cidade: c }));
+                  setPending(p => ({ ...p, cidade: c, bairro: '' }));
+                  setBairroInput('');
                   setDropOpen(false);
                 }} style={{
                   padding: '10px 16px', fontSize: 14, cursor: 'pointer',
@@ -130,6 +143,38 @@ export default function FilterBar({ filters, cidades, onChange, onClear, total }
                   fontWeight: c === pending.cidade ? 700 : undefined,
                 }}>
                   {c.charAt(0) + c.slice(1).toLowerCase()}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bairro */}
+        <div ref={bairroDropRef} style={{ marginBottom: 16, position: 'relative' }}>
+          <label style={labelStyle}>
+            <span style={iconStyle}>🏘️</span> Bairro
+          </label>
+          <input
+            value={bairroInput}
+            onChange={e => { setBairroInput(e.target.value); setBairroDropOpen(true); setPending(p => ({ ...p, bairro: '' })); }}
+            onFocus={() => setBairroDropOpen(true)}
+            placeholder="Busque por bairro..."
+            style={inputStyle}
+          />
+          {bairroDropOpen && bairrosFiltrados.length > 0 && (
+            <div style={dropdownStyle}>
+              {bairrosFiltrados.map(b => (
+                <div key={b} onMouseDown={() => {
+                  setBairroInput(b);
+                  setPending(p => ({ ...p, bairro: b }));
+                  setBairroDropOpen(false);
+                }} style={{
+                  padding: '10px 16px', fontSize: 14, cursor: 'pointer',
+                  background: b === pending.bairro ? 'var(--brand-light)' : undefined,
+                  color: b === pending.bairro ? 'var(--brand)' : undefined,
+                  fontWeight: b === pending.bairro ? 700 : undefined,
+                }}>
+                  {b.charAt(0) + b.slice(1).toLowerCase()}
                 </div>
               ))}
             </div>

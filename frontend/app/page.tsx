@@ -8,13 +8,13 @@ import ImoveisGrid from '../components/imoveis/ImoveisGrid';
 import ImoveisTable from '../components/imoveis/ImoveisTable';
 import ViewToggle, { type ViewMode } from '../components/imoveis/ViewToggle';
 import AiModal from '../components/ia/AiModal';
-import { fetchImoveis, fetchCidades } from '../lib/api';
+import { fetchImoveis, fetchCidades, fetchBairros } from '../lib/api';
 import { enriquece } from '../lib/score';
 import { useFavorites } from '../lib/favorites';
 import type { FilterState, ImovelComScore } from '../lib/types';
 
 const DEFAULT_FILTERS: FilterState = {
-  cidade: '', tipo: '', modalidade: '', financiamento: '',
+  cidade: '', bairro: '', tipo: '', modalidade: '', financiamento: '',
   precoMin: '', precoMax: '', page: 1, limit: 6, orderBy: 'desconto_desc',
 };
 
@@ -22,6 +22,7 @@ export default function Home() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [imoveis, setImoveis] = useState<ImovelComScore[]>([]);
   const [cidades, setCidades] = useState<string[]>([]);
+  const [bairros, setBairros] = useState<string[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,9 @@ export default function Home() {
 
   useEffect(() => { loadImoveis(); }, [loadImoveis]);
   useEffect(() => { fetchCidades().then(setCidades).catch(console.error); }, []);
+  useEffect(() => {
+    fetchBairros(filters.cidade || undefined).then(setBairros).catch(console.error);
+  }, [filters.cidade]);
 
   // Scroll infinito: observa o sentinel só quando não está carregando e há mais páginas
   useEffect(() => {
@@ -104,6 +108,7 @@ export default function Home() {
         <FilterBar
           filters={filters}
           cidades={cidades}
+          bairros={bairros}
           onChange={handleFilterChange}
           onClear={handleClear}
           total={total}

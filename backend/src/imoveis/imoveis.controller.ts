@@ -38,6 +38,11 @@ export class ImoveisController {
     return this.imoveisService.getCidades();
   }
 
+  @Get('bairros')
+  getBairros(@Query('cidade') cidade?: string) {
+    return this.imoveisService.getBairros(cidade);
+  }
+
   @Get('insights')
   getInsights() {
     return this.imoveisService.getInsights();

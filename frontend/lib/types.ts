@@ -57,6 +57,7 @@ export interface Insights {
 
 export interface FilterState {
   cidade: string;
+  bairro: string;
   tipo: string;
   modalidade: string;
   financiamento: string;
