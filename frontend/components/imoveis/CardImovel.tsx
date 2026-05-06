@@ -67,7 +67,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
               onLoad={() => setImgLoaded(true)}
               onError={() => { setImgOk(false); setImgLoaded(true); }}
               loading="lazy"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: imgLoaded ? 'block' : 'none', transition: 'transform 0.4s' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.3s, transform 0.4s' }}
             />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 13, color: 'var(--text-muted)' }}>
