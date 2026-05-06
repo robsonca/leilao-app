@@ -62,7 +62,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           {imgOk ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={streetViewUrl(imovel.endereco, { width: 640, height: 400 })}
+              src={streetViewUrl(imovel, { width: 640, height: 400 })}
               alt={`${imovel.tipo} em ${imovel.bairro}`}
               onLoad={() => setImgLoaded(true)}
               onError={() => { setImgOk(false); setImgLoaded(true); }}
@@ -102,7 +102,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
         {/* Link Street View */}
         {imgOk && imgLoaded && (
           <a
-            href={streetViewWebUrl(imovel.endereco)}
+            href={streetViewWebUrl(imovel)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
