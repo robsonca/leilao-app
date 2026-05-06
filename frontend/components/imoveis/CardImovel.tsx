@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ImovelComScore } from '../../lib/types';
 import { streetViewUrl, streetViewWebUrl } from '../../lib/streetView';
 import { formatBRL, formatPct } from '../../lib/format';
+import { checkDisponivel } from '../../lib/api';
 
 interface Props {
   imovel: ImovelComScore;
@@ -19,11 +20,18 @@ const SCORE_STYLE = {
 };
 
 export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleFav }: Props) {
+  const [disponivel, setDisponivel] = useState<boolean | null>(null);
   const [imgSrc, setImgSrc] = useState<'cef' | 'streetview' | 'none'>('cef');
   const [imgLoaded, setImgLoaded] = useState(false);
   const [heartPop, setHeartPop] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const score = SCORE_STYLE[imovel.classificacao];
+
+  useEffect(() => {
+    checkDisponivel(imovel.numero).then(setDisponivel);
+  }, [imovel.numero]);
+
+  if (disponivel === false) return null;
 
   function buildShareText() {
     const preco = formatBRL(imovel.preco);

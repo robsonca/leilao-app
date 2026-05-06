@@ -43,6 +43,11 @@ export class ImoveisController {
     return this.imoveisService.getInsights();
   }
 
+  @Get('disponivel/:numero')
+  checkDisponivel(@Param('numero') numero: string) {
+    return this.imoveisService.checkDisponivel(numero);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.imoveisService.findOne(id);

@@ -44,6 +44,17 @@ export async function fetchInsights(): Promise<Insights> {
   return res.json();
 }
 
+export async function checkDisponivel(numero: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE}/imoveis/disponivel/${encodeURIComponent(numero)}`);
+    if (!res.ok) return true;
+    const data = await res.json();
+    return data.disponivel;
+  } catch {
+    return true;
+  }
+}
+
 export async function uploadCsv(file: File): Promise<{ upserted: number; errors: number }> {
   const form = new FormData();
   form.append('file', file);

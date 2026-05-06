@@ -214,4 +214,20 @@ export class ImoveisService {
     });
     return result.map((r) => r.cidade);
   }
+
+  async checkDisponivel(numero: string): Promise<{ disponivel: boolean }> {
+    const photoUrl = `https://venda-imoveis.caixa.gov.br/fotos/F${numero.replace(/-/g, '')}21.jpg`;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(photoUrl, {
+        method: 'HEAD',
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      return { disponivel: response.ok };
+    } catch {
+      return { disponivel: true };
+    }
+  }
 }
