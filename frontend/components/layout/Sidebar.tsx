@@ -42,6 +42,18 @@ const NAV = [
     ),
     badge: null,
   },
+  {
+    label: 'Login',
+    href: null,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+    ),
+    badge: 'Em breve',
+  },
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
@@ -74,13 +86,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 32, height: 32, background: 'var(--brand)',
-              borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-            }}>
-              🏠
-            </div>
-            <span style={{ fontWeight: 800, fontSize: 15 }}>LanceCerto</span>
+            <img src="/logo.png" alt="Arrematou" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '0.5px' }}>ARREMATOU</span>
           </div>
           <button onClick={onClose} style={{
             background: 'none', border: '1px solid var(--border)',
