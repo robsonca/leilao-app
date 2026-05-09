@@ -21,6 +21,28 @@ const DEFAULT_FILTERS: FilterState = {
 const FILTERS_KEY = 'leilao_filters';
 const TTL_MS = 24 * 60 * 60 * 1000;
 
+const SESSION_KEY = 'leilao_session';
+
+function filtersKey(f: FilterState) {
+  const { page, limit, ...rest } = f;
+  return JSON.stringify(rest);
+}
+
+function saveSession(data: object) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch {}
+}
+
+function clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+}
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 function loadSavedFilters(): FilterState {
   try {
     const raw = localStorage.getItem(FILTERS_KEY);
@@ -56,9 +78,18 @@ export default function Home() {
   const [geminiKey, setGeminiKey] = useState('');
   const [selectedImovel, setSelectedImovel] = useState<ImovelComScore | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const sessionRestoredRef = useRef(false);
+  const imoveisRef = useRef<ImovelComScore[]>([]);
+  const filtersRef = useRef<FilterState>(filters);
+  const totalRef = useRef(0);
+  const totalPagesRef = useRef(1);
   const { isFav, toggle: toggleFav, count: favCount } = useFavorites();
 
   const loadImoveis = useCallback(async () => {
+    if (sessionRestoredRef.current) {
+      sessionRestoredRef.current = false;
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetchImoveis(filters);
@@ -72,6 +103,47 @@ export default function Home() {
       setLoading(false);
     }
   }, [filters]);
+
+  // Sincroniza refs (para usar no scroll handler sem dependências reativas)
+  useEffect(() => { imoveisRef.current = imoveis; }, [imoveis]);
+  useEffect(() => { filtersRef.current = filters; }, [filters]);
+  useEffect(() => { totalRef.current = total; }, [total]);
+  useEffect(() => { totalPagesRef.current = totalPages; }, [totalPages]);
+
+  // Restaura sessão ao montar (volta de favoritos, etc.)
+  useEffect(() => {
+    const session = loadSession();
+    if (!session || session.filtersKey !== filtersKey(filters)) { clearSession(); return; }
+    sessionRestoredRef.current = true;
+    setImoveis(session.imoveis);
+    setFilters(prev => ({ ...prev, page: session.page }));
+    setTotal(session.total);
+    setTotalPages(session.totalPages);
+    setLoading(false);
+    setTimeout(() => window.scrollTo({ top: session.scrollY, behavior: 'instant' }), 80);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Salva sessão no scroll (debounced 300ms)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const handler = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (imoveisRef.current.length === 0) return;
+        saveSession({
+          imoveis: imoveisRef.current,
+          page: filtersRef.current.page,
+          scrollY: window.scrollY,
+          total: totalRef.current,
+          totalPages: totalPagesRef.current,
+          filtersKey: filtersKey(filtersRef.current),
+        });
+      }, 300);
+    };
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => { window.removeEventListener('scroll', handler); clearTimeout(timer); };
+  }, []);
 
   useEffect(() => { loadImoveis(); }, [loadImoveis]);
   useEffect(() => { fetchCidades().then(setCidades).catch(console.error); }, []);
@@ -97,6 +169,7 @@ export default function Home() {
   }, [loading, filters.page, totalPages]);
 
   function handleFilterChange(partial: Partial<FilterState>) {
+    clearSession();
     setFilters(prev => {
       const next = { ...prev, ...partial };
       saveFilters(next);
@@ -107,6 +180,7 @@ export default function Home() {
   function handleClear() {
     setImoveis([]);
     localStorage.removeItem(FILTERS_KEY);
+    clearSession();
     setFilters(DEFAULT_FILTERS);
   }
 
