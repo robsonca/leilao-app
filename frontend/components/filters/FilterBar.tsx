@@ -55,6 +55,7 @@ export default function FilterBar({ filters, cidades, bairros, onChange, onClear
   const [bairroDropOpen, setBairroDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const bairroDropRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const cidadesFiltradas = cidades
     .filter(c => c.toLowerCase().includes(cidadeInput.toLowerCase()))
@@ -78,6 +79,9 @@ export default function FilterBar({ filters, cidades, bairros, onChange, onClear
     setCidadeInput(filters.cidade);
     setBairroInput(filters.bairro);
     setPanelOpen(true);
+    setTimeout(() => {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   }
 
   function handleSearch() {
@@ -110,7 +114,7 @@ export default function FilterBar({ filters, cidades, bairros, onChange, onClear
   /* ─── painel de busca ─── */
   if (panelOpen) {
     return (
-      <div style={{
+      <div ref={panelRef} style={{
         background: 'var(--white)', borderRadius: 20,
         boxShadow: '0 4px 24px rgba(0,0,0,0.10)', padding: '20px 16px 20px',
         marginBottom: 24,
