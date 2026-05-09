@@ -28,7 +28,7 @@ export default function Header({ total = 0, onMenuClick, favCount = 0 }: HeaderP
       boxShadow: 'var(--shadow-sm)',
     }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit' }}>
-        <img src="/logo.png" alt="Arrematou" style={{ width: 38, height: 38, objectFit: 'contain' }} />
+        <img src="/logo.png" alt="Arrematou" style={{ width: 48, height: 48, objectFit: 'contain' }} />
         <div>
           <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '0.5px' }}>ARREMATOU</span>
           <span style={{
