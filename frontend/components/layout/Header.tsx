@@ -27,18 +27,36 @@ export default function Header({ total = 0, onMenuClick, favCount = 0 }: HeaderP
       zIndex: 100,
       boxShadow: 'var(--shadow-sm)',
     }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
-        <div style={{
-          width: 36, height: 36,
-          background: 'var(--brand)',
-          borderRadius: 10,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18,
-        }}>
-          🏠
-        </div>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit' }}>
+        <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Roof */}
+          <polyline
+            points="10,52 50,12 90,52"
+            stroke="#1B2A6B" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"
+            fill="none"
+          />
+          {/* Inner roof line */}
+          <polyline
+            points="20,52 50,24 80,52"
+            stroke="#1B2A6B" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"
+            fill="none"
+          />
+          {/* Left wall */}
+          <line x1="18" y1="52" x2="18" y2="88" stroke="#1B2A6B" strokeWidth="8" strokeLinecap="round"/>
+          {/* Right wall */}
+          <line x1="82" y1="52" x2="82" y2="88" stroke="#1B2A6B" strokeWidth="8" strokeLinecap="round"/>
+          {/* Letter A */}
+          <text
+            x="50" y="84"
+            textAnchor="middle"
+            fontFamily="Arial, sans-serif"
+            fontWeight="bold"
+            fontSize="38"
+            fill="#1B2A6B"
+          >A</text>
+        </svg>
         <div>
-          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.3px' }}>LanceCerto</span>
+          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '0.5px' }}>ARREMATOU</span>
           <span style={{
             marginLeft: 8,
             background: 'var(--brand-light)',
