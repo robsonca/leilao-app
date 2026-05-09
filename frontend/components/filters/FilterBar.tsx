@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { FilterState } from '../../lib/types';
+import { fetchBairros } from '../../lib/api';
 
 const TIPOS = ['Apartamento', 'Casa', 'Sobrado', 'Terreno', 'Comercial', 'Sala', 'Loja', 'Prédio', 'Galpão'];
 const MODALIDADES = ['Venda Online', 'Venda Direta Online', 'Leilão SFI - Edital Único', 'Licitação Aberta'];
@@ -51,6 +52,7 @@ export default function FilterBar({ filters, cidades, bairros, onChange, onClear
   const [pending, setPending] = useState<Pending>(toPending(filters));
   const [cidadeInput, setCidadeInput] = useState(filters.cidade);
   const [bairroInput, setBairroInput] = useState(filters.bairro);
+  const [localBairros, setLocalBairros] = useState<string[]>(bairros);
   const [dropOpen, setDropOpen] = useState(false);
   const [bairroDropOpen, setBairroDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -61,7 +63,11 @@ export default function FilterBar({ filters, cidades, bairros, onChange, onClear
     .filter(c => c.toLowerCase().includes(cidadeInput.toLowerCase()))
     .slice(0, 30);
 
-  const bairrosFiltrados = bairros
+  useEffect(() => {
+    fetchBairros(pending.cidade || undefined).then(setLocalBairros).catch(() => setLocalBairros(bairros));
+  }, [pending.cidade]);
+
+  const bairrosFiltrados = localBairros
     .filter(b => b.toLowerCase().includes(bairroInput.toLowerCase()))
     .slice(0, 30);
 
