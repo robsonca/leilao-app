@@ -217,7 +217,7 @@ export class ImoveisService {
       distinct: ['bairro'],
       orderBy: { bairro: 'asc' },
     });
-    return result.map((r) => r.bairro);
+    return result.map((r) => r.bairro).filter((b): b is string => !!b && b.trim() !== '');
   }
 
   async getCidades(): Promise<string[]> {
@@ -226,7 +226,7 @@ export class ImoveisService {
       distinct: ['cidade'],
       orderBy: { cidade: 'asc' },
     });
-    return result.map((r) => r.cidade);
+    return result.map((r) => r.cidade).filter((c): c is string => !!c && c.trim() !== '');
   }
 
   async checkDisponivel(numero: string): Promise<{ disponivel: boolean }> {
