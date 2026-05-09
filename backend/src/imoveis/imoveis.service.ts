@@ -190,23 +190,31 @@ export class ImoveisService {
         comFinanciamento,
         totalCidades: totalCidades.length,
       },
-      topCidadesPorVolume: topVolume.map((c) => ({
-        cidade: c.cidade,
-        count: (c._count as { _all: number })._all,
-      })),
-      topCidadesPorDesconto: topDesconto.map((c) => ({
-        cidade: c.cidade,
-        count: (c._count as { _all: number })._all,
-        descontoMedio: c._avg?.desconto ?? 0,
-      })),
-      porTipo: porTipo.map((t) => ({
-        tipo: t.tipo,
-        count: (t._count as { _all: number })._all,
-      })),
-      porModalidade: porModalidade.map((m) => ({
-        modalidade: m.modalidade,
-        count: (m._count as { _all: number })._all,
-      })),
+      topCidadesPorVolume: topVolume
+        .filter((c) => !!c.cidade)
+        .map((c) => ({
+          cidade: c.cidade as string,
+          count: (c._count as { _all: number })._all,
+        })),
+      topCidadesPorDesconto: topDesconto
+        .filter((c) => !!c.cidade)
+        .map((c) => ({
+          cidade: c.cidade as string,
+          count: (c._count as { _all: number })._all,
+          descontoMedio: c._avg?.desconto ?? 0,
+        })),
+      porTipo: porTipo
+        .filter((t) => !!t.tipo)
+        .map((t) => ({
+          tipo: t.tipo as string,
+          count: (t._count as { _all: number })._all,
+        })),
+      porModalidade: porModalidade
+        .filter((m) => !!m.modalidade)
+        .map((m) => ({
+          modalidade: m.modalidade as string,
+          count: (m._count as { _all: number })._all,
+        })),
     };
   }
 
