@@ -18,8 +18,33 @@ const DEFAULT_FILTERS: FilterState = {
   precoMin: '', precoMax: '', page: 1, limit: 6, orderBy: 'desconto_desc',
 };
 
+const FILTERS_KEY = 'leilao_filters';
+const TTL_MS = 24 * 60 * 60 * 1000;
+
+function loadSavedFilters(): FilterState {
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const { savedAt, ...saved } = JSON.parse(raw);
+    if (Date.now() - savedAt > TTL_MS) {
+      localStorage.removeItem(FILTERS_KEY);
+      return DEFAULT_FILTERS;
+    }
+    return { ...DEFAULT_FILTERS, ...saved, page: 1 };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
+function saveFilters(filters: FilterState) {
+  try {
+    const { page, ...rest } = filters;
+    localStorage.setItem(FILTERS_KEY, JSON.stringify({ ...rest, savedAt: Date.now() }));
+  } catch {}
+}
+
 export default function Home() {
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(() => loadSavedFilters());
   const [imoveis, setImoveis] = useState<ImovelComScore[]>([]);
   const [cidades, setCidades] = useState<string[]>([]);
   const [bairros, setBairros] = useState<string[]>([]);
@@ -72,11 +97,16 @@ export default function Home() {
   }, [loading, filters.page, totalPages]);
 
   function handleFilterChange(partial: Partial<FilterState>) {
-    setFilters(prev => ({ ...prev, ...partial }));
+    setFilters(prev => {
+      const next = { ...prev, ...partial };
+      saveFilters(next);
+      return next;
+    });
   }
 
   function handleClear() {
     setImoveis([]);
+    localStorage.removeItem(FILTERS_KEY);
     setFilters(DEFAULT_FILTERS);
   }
 
