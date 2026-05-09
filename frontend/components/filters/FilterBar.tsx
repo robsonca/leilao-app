@@ -270,7 +270,16 @@ export default function FilterBar({ filters, cidades, bairros, onChange, onClear
 
   /* ─── barra compacta (após busca) ─── */
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div style={{
+      marginBottom: 20,
+      position: 'sticky',
+      top: 60,
+      zIndex: 50,
+      background: 'var(--bg)',
+      paddingTop: 12,
+      paddingBottom: 4,
+      marginTop: -12,
+    }}>
       {/* Resumo + botão editar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
