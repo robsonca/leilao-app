@@ -34,6 +34,7 @@ export class ImoveisService {
     } = filters;
 
     const where: Prisma.ImovelWhereInput = {
+      vendido: false,
       ...(cidade && { cidade: { contains: cidade, mode: 'insensitive' } }),
       ...(bairro && { bairro: { contains: bairro, mode: 'insensitive' } }),
       ...(tipo && { tipo: { contains: tipo, mode: 'insensitive' } }),
@@ -83,6 +84,7 @@ export class ImoveisService {
     const { cidade, bairro, tipo, modalidade, financiamento, precoMin, precoMax } = filters;
 
     const where: Prisma.ImovelWhereInput = {
+      vendido: false,
       ...(cidade && { cidade: { contains: cidade, mode: 'insensitive' } }),
       ...(bairro && { bairro: { contains: bairro, mode: 'insensitive' } }),
       ...(tipo && { tipo: { contains: tipo, mode: 'insensitive' } }),
@@ -251,5 +253,40 @@ export class ImoveisService {
     } catch {
       return { disponivel: true };
     }
+  }
+
+  async syncVendidos(): Promise<{ total: number; vendidos: number; reativados: number }> {
+    const imoveis = await this.prisma.imovel.findMany({
+      select: { id: true, numero: true, vendido: true },
+    });
+
+    let vendidos = 0;
+    let reativados = 0;
+    const BATCH = 15;
+
+    for (let i = 0; i < imoveis.length; i += BATCH) {
+      const batch = imoveis.slice(i, i + BATCH);
+      await Promise.all(
+        batch.map(async (imovel) => {
+          const photoUrl = `https://venda-imoveis.caixa.gov.br/fotos/F${imovel.numero.replace(/-/g, '')}21.jpg`;
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(photoUrl, { method: 'HEAD', signal: controller.signal });
+            clearTimeout(timer);
+            const novoVendido = !response.ok;
+            if (novoVendido !== imovel.vendido) {
+              await this.prisma.imovel.update({ where: { id: imovel.id }, data: { vendido: novoVendido } });
+              if (novoVendido) vendidos++;
+              else reativados++;
+            }
+          } catch {
+            // timeout ou erro de rede — mantém estado atual
+          }
+        }),
+      );
+    }
+
+    return { total: imoveis.length, vendidos, reativados };
   }
 }

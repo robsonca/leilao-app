@@ -25,4 +25,5 @@ model Imovel {
   quartos       Int?
   vagas         Int?
   criadoEm      DateTime @default(now())
+  vendido       Boolean  @default(false)
 }

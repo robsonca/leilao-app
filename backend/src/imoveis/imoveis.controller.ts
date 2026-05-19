@@ -66,6 +66,14 @@ export class ImoveisController {
     return this.syncService.syncFromStorage();
   }
 
+  @Post('sync-vendidos')
+  syncVendidos(@Headers('x-sync-secret') secret: string) {
+    if (secret !== process.env.SYNC_SECRET) {
+      throw new UnauthorizedException('Token inválido');
+    }
+    return this.imoveisService.syncVendidos();
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   uploadCsv(@UploadedFile() file: Express.Multer.File) {
