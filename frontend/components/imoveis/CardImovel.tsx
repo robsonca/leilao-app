@@ -23,6 +23,7 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
   const [imgLoaded, setImgLoaded] = useState(false);
   const [heartPop, setHeartPop] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [cefModalOpen, setCefModalOpen] = useState(false);
   const score = SCORE_STYLE[imovel.classificacao];
 
   function buildShareText() {
@@ -321,19 +322,108 @@ export default function CardImovel({ imovel, onAnalise, isFav = false, onToggleF
           )}
 
           {imovel.link && (
-            <a
-              href={imovel.link} target="_blank" rel="noopener noreferrer"
+            <button
+              onClick={e => { e.stopPropagation(); setCefModalOpen(true); }}
               style={{
                 padding: '11px 12px', borderRadius: 10,
                 border: '1px solid var(--border)', color: 'var(--text-secondary)',
-                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+                fontSize: 14, fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'var(--white)',
+                background: 'var(--white)', cursor: 'pointer',
               }}
               title="Ver no site da CEF"
             >
               ↗
+            </button>
+          )}
+        </div>
+      </div>
+
+      {cefModalOpen && imovel.link && (
+        <CefModal url={imovel.link} onClose={() => setCefModalOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+function CefModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+        zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--white)', width: '100%', maxWidth: 720,
+          height: '85vh', borderRadius: '16px 16px 0 0',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.2)',
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
+            Site da Caixa
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a
+              href={url} target="_blank" rel="noopener noreferrer"
+              title="Abrir em nova aba"
+              style={{
+                fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)',
+                textDecoration: 'none', padding: '6px 10px', borderRadius: 8,
+                border: '1px solid var(--border)',
+              }}
+            >
+              ↗ Nova aba
             </a>
+            <button
+              onClick={onClose}
+              style={{
+                fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '6px 10px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Conteúdo */}
+        <div style={{ position: 'relative', flex: 1, background: '#F3F4F6' }}>
+          {!loaded && (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, color: 'var(--text-muted)', flexDirection: 'column', gap: 8,
+            }}>
+              Carregando site da Caixa…
+            </div>
+          )}
+          <iframe
+            src={url}
+            onLoad={() => setLoaded(true)}
+            title="Site da Caixa Econômica"
+            style={{ width: '100%', height: '100%', border: 'none', opacity: loaded ? 1 : 0 }}
+          />
+          {loaded && (
+            <div style={{
+              position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+              background: 'rgba(0,0,0,0.75)', color: 'white', fontSize: 11,
+              padding: '5px 10px', borderRadius: 20, pointerEvents: 'none',
+            }}>
+              Não carregou? Toque em &quot;Nova aba&quot; acima
+            </div>
           )}
         </div>
       </div>
