@@ -371,9 +371,18 @@ function CefModal({ url, onClose }: { url: string; onClose: () => void }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
         }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
-            Site da Caixa
-          </span>
+          <button
+            onClick={onClose}
+            title="Voltar"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '6px 4px',
+            }}
+          >
+            ← Voltar
+          </button>
           <div style={{ display: 'flex', gap: 8 }}>
             <a
               href={url} target="_blank" rel="noopener noreferrer"
@@ -386,16 +395,6 @@ function CefModal({ url, onClose }: { url: string; onClose: () => void }) {
             >
               ↗ Nova aba
             </a>
-            <button
-              onClick={onClose}
-              style={{
-                fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '6px 10px',
-              }}
-            >
-              ✕
-            </button>
           </div>
         </div>
 
